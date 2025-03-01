@@ -1,0 +1,155 @@
+# Copyright 2023 The Lynx Authors. All rights reserved.
+#
+
+import("//build/apple/templates/merge_plist.gni")
+import("//build/config/mac/sdk_info.gni")
+
+# Template to create a general apple resources bundle (e.g. .bundle)
+#
+# Arguments
+#
+#   - bundle_identitier
+#
+#       bundle identitifier
+#
+#   - deployment_target (optional)
+#
+#       minimum system version
+#
+#   - display_name (optional)
+#
+#       display name of the bundle (e.g. the name that is displayed to the
+#       user); defaults to $output_name
+#
+#   - output_name (optional)
+#
+#       name of the bundle without the extension; defaults to $target_name
+#
+#   - resources(optional)
+#
+#       Path to the resources file or folder that you want to put into the bundle
+
+
+template("darwin_general_bundle") {
+  assert(
+      defined(invoker.bundle_identifier),
+      "bundle_identifier must be defined for darwin_general_bundle ($target_name)")
+
+  _output_name = target_name
+  if (defined(invoker.output_name)) {
+    _output_name = invoker.output_name
+  }
+
+  _display_name = _output_name
+  if (defined(invoker.display_name)) {
+    _display_name = invoker.display_name
+  }
+
+  _plist_target = target_name + "_plist"
+  _plist_bundle = target_name + "_plist_bundle"
+
+  merge_plist(_plist_target) {
+    substitutions = {
+      CURRENT_PROJECT_VERSION = "1"
+      DEVELOPMENT_LANGUAGE = "en"
+      EXECUTABLE_NAME = "$_output_name"
+      PRODUCT_BUNDLE_IDENTIFIER = invoker.bundle_identifier
+      PRODUCT_BUNDLE_PACKAGE_TYPE = "BNDL"
+      PRODUCT_NAME = "$_display_name"
+
+      COMPILER_NAME = sdk_info.compiler
+      MACOS_BUILD = sdk_info.macos_build
+      PLATFORM_BUILD = sdk_info.sdk_build
+      PLATFORM_DISPLAY_NAME = "MacOSX"
+      PLATFORM_NAME = "macosx"
+      PLATFORM_VERSION = sdk_info.sdk_version
+      SDK_BUILD = sdk_info.sdk_build
+      SDK_NAME = sdk_info.sdk
+      XCODE_BUILD = sdk_info.xcode_build
+      XCODE_VERSION = sdk_info.xcode_version
+    }
+    if (defined(invoker.deployment_target)) {
+      if (is_ios) {
+        substitutions.IPHONEOS_DEPLOYMENT_TARGET = invoker.deployment_target
+      } else if (is_mac) {
+        substitutions.MACOSX_DEPLOYMENT_TARGET = invoker.deployment_target
+      } else if (is_tvos) {
+        substitutions.APPLETVOS_DEPLOYMENT_TARGET = invoker.deployment_target
+      }
+    }
+
+    format = "binary1"
+    output = "$target_out_dir/$_plist_target/Info.plist"
+    plists = [ "//build/apple/resources/Info.plist" ]
+    if (is_ios) {
+      plists += [
+        get_label_info("//build/config/ios:compiler_plist", "target_out_dir") +
+            "/compiler_plist/Info.plist",
+      ]
+
+      deps = [ "//build/config/ios:compiler_plist" ]
+    } else if (is_mac) {
+      plists += [
+        get_label_info("//build/config/mac:compiler_plist", "target_out_dir") +
+            "/compiler_plist/Info.plist",
+      ]
+
+      deps = [ "//build/config/mac:compiler_plist" ]
+    } else if (is_tvos) {
+      plists += [
+        get_label_info("//build/config/tvos:compiler_plist", "target_out_dir") +
+            "/compiler_plist/Info.plist",
+      ]
+
+      deps = [ "//build/config/tvos:compiler_plist" ]
+    }
+
+    if (defined(invoker.info_plist)) {
+      plists += [ invoker.info_plist ]
+    }
+  }
+
+  bundle_data(_plist_bundle) {
+    public_deps = [ ":$_plist_target" ]
+    sources = [ "$target_out_dir/$_plist_target/Info.plist" ]
+    outputs = [ "{{bundle_contents_dir}}/Info.plist" ]
+  }
+
+  if (defined(invoker.resources)) {
+    _resources_bundle = target_name + "_resources_bundle"
+    bundle_data(_resources_bundle) {
+      sources = invoker.resources
+      outputs = [ "{{bundle_resources_dir}}/{{source_file_part}}" ]
+    }
+  }
+
+  create_bundle(target_name) {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "display_name",
+                             "output_name",
+                           ])
+
+    if (!defined(public_deps)) {
+      public_deps = []
+    }
+    public_deps += [ ":$_plist_bundle" ]
+    if (defined(invoker.resources)) {
+      public_deps += [ ":$_resources_bundle" ]
+    }
+
+    bundle_extension = "bundle"
+    product_type = "com.apple.product-type.bundle"
+
+    bundle_root_dir = "$root_out_dir/$_output_name.${bundle_extension}"
+    bundle_executable_dir = bundle_root_dir
+    if (is_ios || is_tvos) {
+      bundle_contents_dir = bundle_root_dir
+      bundle_resources_dir = bundle_contents_dir
+    } else if (is_mac) {
+      bundle_contents_dir  = "$bundle_root_dir/Contents"
+      bundle_resources_dir = "$bundle_contents_dir/Resources"
+    }
+  }
+}

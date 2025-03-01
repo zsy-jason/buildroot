@@ -1,0 +1,75 @@
+# Copyright 2022 The Lynx Authors. All rights reserved.
+
+template("gen_subspec_file") {
+  assert(defined(invoker.parent_path), "The parent_path of the package must be specified.")
+  assert(defined(invoker.podspec_name), "The podspec_name of the package must be specified.")
+  assert(defined(invoker.sources), "The sources of the package must be specified.")
+
+  source_set(target_name) {}
+
+  _podspec_name = invoker.podspec_name
+  _output_path = "$root_out_dir/podspec/tmp/$_podspec_name/$target_name.json"
+  _parent_path = invoker.parent_path
+  rebase_sources = []
+  foreach(path, invoker.sources) {
+    r_path = rebase_path(path, "//.")
+    rebase_sources += [ r_path ]
+  }
+  _sources = rebase_sources
+
+  package_json = {
+    name = _podspec_name
+    parent_path = _parent_path
+    source_files = _sources
+  }
+
+  if (defined(invoker.compiler_flags)) {
+    package_json.compiler_flags = invoker.compiler_flags
+  }
+
+  if (defined(invoker.dependencies)) {
+    package_json.dependencies = invoker.dependencies
+  }
+
+  if (defined(invoker.deps_frameworks)) {
+    package_json.frameworks = invoker.deps_frameworks
+  }
+
+  if (defined(invoker.exclude_files)) {
+    package_json.exclude_files = invoker.exclude_files
+  }
+  
+  if (defined(invoker.header_mappings_dir)) {
+    package_json.header_mappings_dir = invoker.header_mappings_dir
+  }
+
+  if (defined(invoker.libraries)) {
+    package_json.libraries = invoker.libraries
+  }
+
+  if (defined(invoker.module_name)) {
+    package_json.module_name = invoker.module_name
+  }
+  
+  if (defined(invoker.pod_target_xcconfig)) {
+    package_json.pod_target_xcconfig = invoker.pod_target_xcconfig
+  }
+  
+  if (defined(invoker.platform)) {
+    package_json.platform = invoker.platform
+  }
+
+  if (defined(invoker.preserve_paths)) {
+    package_json.preserve_paths = invoker.preserve_paths
+  }
+
+  if (defined(invoker.private_header_files)) {
+    package_json.private_header_files = invoker.private_header_files
+  }
+
+  if (defined(invoker.public_header_files)) {
+    package_json.public_header_files = invoker.public_header_files
+  }
+
+  write_file("$_output_path", package_json, "json")
+}

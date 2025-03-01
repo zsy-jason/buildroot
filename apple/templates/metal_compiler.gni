@@ -1,0 +1,88 @@
+# Copyright 2023 The Lynx Authors. All rights reserved.
+#
+
+if (is_tvos) {
+  import("//build/config/tvos/deployment_target.gni")
+  import("//build/config/tvos/tvos_sdk.gni")
+} else if (is_ios) {
+  import("//build/config/ios/deployment_target.gni")
+  import("//build/config/ios/ios_sdk.gni")
+}
+
+# This template will compile a metal file to metallib
+# This template accepts a source input and some dependencies.
+# The source will be compiled to a .dat file and then linked to a .metallib file
+# The product will be output to path of root_build_dir/metal/$source_name. The source_name indicates the name of the input file
+
+# Arguments
+#
+#     source:
+#       required, the path of .metal file
+#     include_dirs:
+#       optional, headers path
+#     lib_dirs:
+#       optional, dependent static library path
+#
+
+template("metal_compiler") {
+  assert(defined(invoker.source),
+         "source must be defined and not empty for $target_name")
+
+  find_xcode_executable = "//build/mac/find_xcode_executable.py"
+  metal_exec = exec_script(find_xcode_executable, ["metal"], "trim string")
+
+  _include_dirs = []
+  if (defined(invoker.include_dirs)) {
+    _include_dirs = invoker.include_dirs
+  }
+  _lib_dirs = []
+  if (defined(invoker.lib_dirs)) {
+    _lib_dirs = invoker.lib_dirs
+  }
+
+  _source_name = get_path_info(invoker.source, "name")
+  action(target_name) {
+    script = "//build/apple/script/metal_compiler.py"
+    outputs = [
+      "$root_build_dir/metal/$_source_name/default.metallib",
+      "$root_build_dir/metal/$_source_name/$_source_name.dat",
+    ]
+    sdk_path = ""
+    deployment_target = ""
+    environment = ""
+    if (is_tvos) {
+      sdk_path = tvos_sdk_path
+      deployment_target = tvos_deployment_target
+      environment = tv_target_environment
+    } else if (is_ios) {
+      sdk_path = ios_sdk_path
+      deployment_target = ios_deployment_target
+      environment = target_environment
+    }
+    args = [
+      "--metal-path",
+      metal_exec,
+      "--input-path",
+      rebase_path(invoker.source, root_build_dir),
+      "--output-path",
+      rebase_path("$root_build_dir/metal/$_source_name", root_build_dir),
+      "--sysroot",
+      sdk_path
+      "--minimum-deployment-target",
+      deployment_target,
+      "--type",
+      environment,
+      "--target-os",
+      target_os,
+    ]
+
+    args += [ "--include-paths" ]
+    foreach(include, _include_dirs) {
+      args += [ rebase_path(include, root_build_dir) ]
+    }
+    args += [ "--deps-paths" ]
+    foreach(lib, _lib_dirs) {
+      args += [ rebase_path(lib, root_build_dir) ]
+    }
+  }
+}

@@ -1,0 +1,44 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+config("libfuzzer_config") {
+  ldflags = ["-fsanitize=fuzzer"]
+  cflags = ["-fsanitize=fuzzer-no-link"]
+  if(is_linux){
+    ldflags += ["-nostdlib++"]
+    # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html#running-the-instrumented-program
+    cflags += [
+      "-mllvm", 
+      "-runtime-counter-relocation",
+    ]
+  }
+}
+
+source_set("fuzzer_main") {
+  sources = [
+    "compiler-rt/lib/fuzzer/FuzzerCrossOver.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerDataFlowTrace.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerDriver.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerExtFunctionsDlsym.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerExtFunctionsWeak.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerExtFunctionsWindows.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerExtraCounters.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerFork.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerIO.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerIOPosix.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerIOWindows.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerLoop.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerMerge.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerMutate.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerSHA1.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerTracePC.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtil.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtilDarwin.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtilFuchsia.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtilLinux.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtilPosix.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerUtilWindows.cpp",
+    "compiler-rt/lib/fuzzer/FuzzerMain.cpp",
+  ]
+}

@@ -1,0 +1,64 @@
+# Copyright 2015 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//build/toolchain/goma.gni")
+import("//build/config/tvos/deployment_target.gni")
+
+declare_args() {
+  # SDK path to use. When empty this will use the default SDK based on the
+  # value of use_tvos_simulator.
+  tvos_sdk_path = ""
+
+  # Set to true when targeting a simulator build on tvos. False means that the
+  # target is for running on the device. The default value is to use the
+  # Simulator except when targeting GYP's Xcode builds (for compat with the
+  # existing GYP build).
+  use_tvos_simulator = true
+
+  # The path to the tvos device SDK.
+  tvos_device_sdk_path = ""
+
+  # The path to the tvos simulator SDK.
+  tvos_simulator_sdk_path = ""
+
+  # Version of tvos that we're targeting for tests.
+  tvos_testing_deployment_target = "13.0"
+}
+
+if (tvos_sdk_path == "") {
+  tvos_sdk_args = []
+  if (use_goma && create_xcode_symlinks) {
+    tvos_sdk_args += [
+      "--symlink",
+      rebase_path(root_gen_dir),
+    ]
+  }
+  if (!use_tvos_simulator && tvos_device_sdk_path == "") {
+    tvos_sdk_args += [
+      "--sdk",
+      "appletvos",
+    ]
+    _tvos_device_sdk_result =
+        exec_script("tvos_sdk.py", tvos_sdk_args, "list lines")
+    tvos_device_sdk_path = _tvos_device_sdk_result[0]
+  }
+
+  if (use_tvos_simulator && tvos_simulator_sdk_path == "") {
+    tvos_sdk_args += [
+      "--sdk",
+      "appletvsimulator",
+    ]
+    _tvos_sim_sdk_result = exec_script("tvos_sdk.py", tvos_sdk_args, "list lines")
+    tvos_simulator_sdk_path = _tvos_sim_sdk_result[0]
+  }
+
+  # Compute default target.
+  if (use_tvos_simulator) {
+    assert(tvos_simulator_sdk_path != "")
+    tvos_sdk_path = tvos_simulator_sdk_path
+  } else {
+    assert(tvos_device_sdk_path != "")
+    tvos_sdk_path = tvos_device_sdk_path
+  }
+}

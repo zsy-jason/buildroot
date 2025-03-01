@@ -1,0 +1,50 @@
+# Copyright 2022 The Lynx Authors. All rights reserved.
+
+import("//build/toolchain/wasm.gni")
+
+template("wasm_static_lib") {
+  assert(defined(invoker.output_name), "must specify a \"output_name\" value")
+  assert(defined(invoker.binary_path), "must specify a \"binary_path\" value")
+  assert(defined(invoker.args), "must specify a \"args\" value")
+
+  _vars_to_forward = [
+    "cflags",
+    "defines",
+    "deps",
+    "ldflags",
+    "visibility",
+  ]
+
+  script = invoker.script
+  binary_path = invoker.binary_path
+  output_name = invoker.output_name
+  _args = invoker.args
+
+  copy("copy_static_lib") {
+    visibility = [ ":*" ]
+    sources = [ "$binary_path/lib$output_name.a" ]
+    outputs = [ "$root_out_dir/wasm/lib$output_name.a" ]
+
+    deps = [
+      ":create_static_lib",
+    ]
+  }
+
+  static_library("create_static_lib") {
+    complete_static_lib = true
+    output_name = invoker.output_name
+    forward_variables_from(invoker, _vars_to_forward)
+    configs -= [ "//build/config/compiler:no_rtti" ]
+    configs += [ "//build/config/compiler:rtti" ]
+  }
+
+  action(target_name) {
+    script = invoker.script
+    outputs = ["$root_build_dir/$output_name.js"]
+    args = _args
+
+    deps = [
+      ":copy_static_lib",
+    ]
+  }
+}

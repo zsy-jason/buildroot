@@ -1,0 +1,11 @@
+# Copyright 2024 The Lynx Authors. All rights reserved.
+
+source_set("gtest_custom") {
+  include_dirs = [
+    "//third_party/googletest/",
+    "//third_party/googletest/googletest",
+    "//third_party/googletest/googletest/include",
+  ]
+
+  sources = []
+}

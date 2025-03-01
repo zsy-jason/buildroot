@@ -1,0 +1,92 @@
+# Copyright 2022 The Lynx Authors. All rights reserved.
+
+template("darwin_framework") {
+
+  assert(defined(invoker.framework_name), "darwin_framework() must specify a \"framework_name\" value")
+  assert(defined(invoker.info_plist_path), "darwin_framework() must specify a \"info_plist_path\" value")
+
+  _framework_name = invoker.framework_name
+  _info_plist_path = invoker.info_plist_path
+
+  _framework_headers = []
+  if (defined(invoker.framework_headers)) {
+    _framework_headers = invoker.framework_headers
+  }
+
+  _module_map_path = ""
+  if (defined(invoker.module_map_path)) {
+    _module_map_path = invoker.module_map_path
+  }
+
+  _framework_filename = "$_framework_name.framework"
+  _framework_binary_subpath = "Versions/A/$_framework_name"
+  _framework_dir = "$root_out_dir/$_framework_filename"
+
+  prefix_name = target_name
+
+  action(target_name) {
+    visibility = [ ":*" ]
+    script = "//build/config/mac/package_framework.py"
+    outputs = [ "$root_build_dir/$_framework_name.stamp" ]
+    args = [
+      "--framework",
+      "$_framework_filename",
+      "--version",
+      "A",
+      "--contents",
+      "$_framework_name",
+      "Resources",
+      "Headers",
+      "Modules",
+      "--stamp",
+      "$_framework_name.stamp",
+    ]
+    deps = [
+      ":${prefix_name}_framework_bundle",
+    ]
+  }
+
+  create_bundle("${prefix_name}_framework_bundle") {
+    bundle_root_dir = "$root_build_dir/$_framework_name.framework"
+
+    deps = [
+      ":${prefix_name}_copy_dylib",
+      ":${prefix_name}_headers_data",
+      ":${prefix_name}_info_plist_data",
+    ]
+
+    if (_module_map_path != "") {
+      deps += [ ":${prefix_name}_module_map_data" ]
+    }
+  }
+
+  shared_library("${prefix_name}_create_framework_dylib") {
+    visibility = [ ":*" ]
+    output_name = "$_framework_name"
+    forward_variables_from(invoker, "*", [])
+  }
+
+  copy("${prefix_name}_copy_dylib") {
+    visibility = [ ":*" ]
+    sources = [ "$root_out_dir/lib$_framework_name.dylib" ]
+    outputs = [ "$_framework_dir/$_framework_binary_subpath" ]
+    deps = [ ":${prefix_name}_create_framework_dylib" ]
+  }
+
+  bundle_data("${prefix_name}_headers_data") {
+    sources = rebase_path(_framework_headers, "", "//")
+    outputs = [ "{{bundle_root_dir}}/Versions/A/Headers/{{source_file_part}}" ]
+  }
+
+  bundle_data("${prefix_name}_info_plist_data") {
+    visibility = [ ":*" ]
+    sources = [ _info_plist_path ]
+    outputs = [ "{{bundle_root_dir}}/Versions/A/Resources/Info.plist" ]
+  }
+
+  bundle_data("${prefix_name}_module_map_data") {
+    visibility = [ ":*" ]
+    sources = [ _module_map_path ]
+    outputs = [ "{{bundle_root_dir}}/Versions/A/Modules/module.modulemap" ]
+  }
+}

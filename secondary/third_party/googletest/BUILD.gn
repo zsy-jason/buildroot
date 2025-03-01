@@ -1,0 +1,160 @@
+# Copyright 2023 The Lynx Authors. All rights reserved.
+
+config("gtest_private_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "//third_party/googletest/googletest",
+    ".",
+  ]
+}
+
+config("gtest_config") {
+  include_dirs = [ "//third_party/googletest/googletest/include" ]
+}
+
+config("gtest_custom_config") {
+  include_dirs = [ "//third_party/googletest_custom" ]
+}
+
+gtest_public_headers = [
+  "//third_party/googletest/googletest/include/gtest/gtest-spi.h",
+  "//third_party/googletest/googletest/include/gtest/gtest.h",
+]
+
+gtest_shared_sources = [
+  "//third_party/googletest/googletest/include/gtest/gtest-assertion-result.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-death-test.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-matchers.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-message.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-param-test.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-printers.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-spi.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-test-part.h",
+  "//third_party/googletest/googletest/include/gtest/gtest-typed-test.h",
+  "//third_party/googletest/googletest/include/gtest/gtest.h",
+  "//third_party/googletest/googletest/include/gtest/gtest_pred_impl.h",
+  "//third_party/googletest/googletest/include/gtest/gtest_prod.h",
+  "//third_party/googletest/googletest/include/gtest/internal/custom/gtest-port.h",
+  "//third_party/googletest/googletest/include/gtest/internal/custom/gtest-printers.h",
+  "//third_party/googletest/googletest/include/gtest/internal/custom/gtest.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-death-test-internal.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-filepath.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-internal.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-param-util.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-port-arch.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-port.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-string.h",
+  "//third_party/googletest/googletest/include/gtest/internal/gtest-type-util.h",
+  "//third_party/googletest/googletest/src/gtest-assertion-result.cc",
+  "//third_party/googletest/googletest/src/gtest-death-test.cc",
+  "//third_party/googletest/googletest/src/gtest-filepath.cc",
+  "//third_party/googletest/googletest/src/gtest-internal-inl.h",
+  "//third_party/googletest/googletest/src/gtest-matchers.cc",
+  "//third_party/googletest/googletest/src/gtest-printers.cc",
+  "//third_party/googletest/googletest/src/gtest-test-part.cc",
+  "//third_party/googletest/googletest/src/gtest-typed-test.cc",
+  "//third_party/googletest/googletest/src/gtest.cc",
+]  # gtest_shared_sources end
+
+static_library("gtest") {
+  testonly = true
+
+  public = gtest_public_headers
+
+  sources = gtest_shared_sources
+  sources += [ "//third_party/googletest/googletest/src/gtest-port.cc" ]
+
+  all_dependent_configs = [ ":gtest_config" ]
+  configs += [ ":gtest_private_config" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+}
+
+source_set("gtest_sources") {
+  public = gtest_public_headers
+
+  sources = gtest_shared_sources
+
+  all_dependent_configs = []
+  # third_party/googletest_custom of Lynx supports unit testing for method
+  # which calls through the JNI into Java code, so place `//third_party/googletest_custom`
+  # before `//third_party/googletest/googletest/include` to prioritize finding headers
+  # in `googletest_custom` to support JNI-related functions.
+  if (is_android) {
+    public_deps = [ "//third_party/googletest_custom:gtest_custom" ]
+    all_dependent_configs += [ ":gtest_custom_config" ]
+  }
+  all_dependent_configs += [ ":gtest_config" ]
+  configs += [ ":gtest_private_config" ]
+}
+
+source_set("gtest_main") {
+  testonly = true
+  sources = [ "//third_party/googletest/googletest/src/gtest_main.cc" ]
+  deps = [ ":gtest" ]
+  configs += [ ":gtest_private_config" ]
+}
+
+config("gmock_private_config") {
+  visibility = [ ":*" ]
+  include_dirs = [
+    "//third_party/googletest/googlemock",
+    ".",
+  ]
+}
+
+config("gmock_config") {
+  include_dirs = [ "//third_party/googletest/googlemock/include" ]
+
+  cflags_cc = [
+    # The MOCK_METHODn() macros do not specify "override", which triggers this
+    # warning in users: "error: 'Method' overrides a member function but is not
+    # marked 'override' [-Werror,-Winconsistent-missing-override]". Suppress
+    # these warnings until https://github.com/google/googletest/issues/533 is
+    # fixed.
+    "-Wno-inconsistent-missing-override",
+  ]
+}
+
+static_library("gmock") {
+  testonly = true
+
+  public = [ "//third_party/googletest/googletest/include/gmock/gmock.h" ]
+
+  sources = [
+    "//third_party/googletest/googlemock/include/gmock/gmock-actions.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-cardinalities.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-function-mocker.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-generated-actions.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-matchers.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-more-matchers.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-nice-strict.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock-spec-builders.h",
+    "//third_party/googletest/googlemock/include/gmock/gmock.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/custom/gmock-generated-actions.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/custom/gmock-matchers.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/custom/gmock-port.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/gmock-internal-utils.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/gmock-port.h",
+    "//third_party/googletest/googlemock/include/gmock/internal/gmock-pp.h",
+    "//third_party/googletest/googlemock/src/gmock-cardinalities.cc",
+    "//third_party/googletest/googlemock/src/gmock-internal-utils.cc",
+    "//third_party/googletest/googlemock/src/gmock-matchers.cc",
+    "//third_party/googletest/googlemock/src/gmock-spec-builders.cc",
+    "//third_party/googletest/googlemock/src/gmock.cc",
+  ]
+
+  all_dependent_configs = [ ":gmock_config" ]
+  configs += [ ":gmock_private_config" ]
+
+  deps = [ ":gtest" ]
+}
+
+static_library("gmock_main") {
+  testonly = true
+  sources = [ "//third_party/googletest/googlemock/src/gmock_main.cc" ]
+  configs += [ ":gmock_private_config" ]
+  configs -= [ "//build/config/compiler:no_rtti" ]
+  configs += [ "//build/config/compiler:rtti" ]
+  deps = [ ":gmock" ]
+}

@@ -1,0 +1,7 @@
+# Copyright 2023 The Lynx Authors. All rights reserved.
+#
+
+declare_args() {
+  # Specify Windows Runtime Library, either mt or md, mt by default
+  windows_runtime_library_mode = "mt"
+}

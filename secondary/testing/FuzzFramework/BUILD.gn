@@ -1,0 +1,90 @@
+# Copyright 2014 The Lynx Authors. All rights reserved.
+# Licensed under the Apache License Version 2.0 that can be found in the
+# LICENSE file in the root directory of this source tree.
+
+config("fuzz_config") {
+  ldflags = [ "-fsanitize=fuzzer" ]
+  cflags = [ "-fsanitize=fuzzer-no-link" ]
+  if (is_linux) {
+    ldflags += [ "-nostdlib++" ]
+
+    # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html#running-the-instrumented-program
+    cflags += [
+      "-mllvm",
+      "-runtime-counter-relocation",
+    ]
+  }
+}
+
+source_set("fuzz_test_framework_base") {
+  sources = [
+    "//third_party/FuzzFramework/src/base/FuzzerBuiltins.h",
+    "//third_party/FuzzFramework/src/base/FuzzerBuiltinsMsvc.h",
+    "//third_party/FuzzFramework/src/base/FuzzerCommand.h",
+    "//third_party/FuzzFramework/src/base/FuzzerCorpus.h",
+    "//third_party/FuzzFramework/src/base/FuzzerCrossOver.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerDataFlowTrace.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerDataFlowTrace.h",
+    "//third_party/FuzzFramework/src/base/FuzzerDefs.h",
+    "//third_party/FuzzFramework/src/base/FuzzerDictionary.h",
+    "//third_party/FuzzFramework/src/base/FuzzerDriver.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtFunctions.h",
+    "//third_party/FuzzFramework/src/base/FuzzerExtFunctionsDlsym.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtFunctionsWeak.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtFunctionsWindows.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtraCounters.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtraCountersDarwin.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerExtraCountersWindows.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerFork.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerFork.h",
+    "//third_party/FuzzFramework/src/base/FuzzerIO.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerIO.h",
+    "//third_party/FuzzFramework/src/base/FuzzerIOPosix.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerIOWindows.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerInterceptors.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerInterface.h",
+    "//third_party/FuzzFramework/src/base/FuzzerInternal.h",
+    "//third_party/FuzzFramework/src/base/FuzzerLoop.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerMain.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerMerge.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerMerge.h",
+    "//third_party/FuzzFramework/src/base/FuzzerMutate.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerMutate.h",
+    "//third_party/FuzzFramework/src/base/FuzzerOptions.h",
+    "//third_party/FuzzFramework/src/base/FuzzerPlatform.h",
+    "//third_party/FuzzFramework/src/base/FuzzerRandom.h",
+    "//third_party/FuzzFramework/src/base/FuzzerSHA1.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerSHA1.h",
+    "//third_party/FuzzFramework/src/base/FuzzerTracePC.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerTracePC.h",
+    "//third_party/FuzzFramework/src/base/FuzzerUtil.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerUtil.h",
+    "//third_party/FuzzFramework/src/base/FuzzerUtilDarwin.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerUtilFuchsia.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerUtilLinux.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerUtilPosix.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerUtilWindows.cpp",
+    "//third_party/FuzzFramework/src/base/FuzzerValueBitMap.h",
+    "//third_party/FuzzFramework/src/base/FuzzerDataBuilder.cc",
+    "//third_party/FuzzFramework/src/base/FuzzerDataBuilder.h",
+  ]
+
+  deps = [ 
+    # TODO(yongjie): remove lynx deps here
+    "//lynx/third_party/rapidjson:rapidjson"
+  ]
+}
+
+config("fuzz_test_framework_public_config") {
+  include_dirs = [ "//third_party/FuzzFramework/src" ]
+}
+
+source_set("fuzz_test_framework") {
+  sources = [
+    "//third_party/FuzzFramework/src/fuzztest.cc",
+    "//third_party/FuzzFramework/src/fuzztest.h",
+    "//third_party/FuzzFramework/src/fuzztestHelper.h",
+  ]
+
+  public_configs = [ ":fuzz_test_framework_public_config" ]
+}

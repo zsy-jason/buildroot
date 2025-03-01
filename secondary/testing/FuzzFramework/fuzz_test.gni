@@ -1,0 +1,30 @@
+# Copyright 2023 The Lynx Authors. All rights reserved.
+
+template("fuzz_test") {
+  assert(defined(invoker.sources), "missing sources for ${target_name}")
+  assert(defined(invoker.deps), "missing deps for ${target_name}")
+  executable("${target_name}") {
+    forward_variables_from(invoker,
+                           "*",
+                           [
+                             "deps",
+                             "configs",
+                           ])
+    testonly = true
+    deps = invoker.deps
+
+    # llvm for linux devices includes the fuzzer library.
+    if (!is_linux) {
+      deps += [ "//testing/FuzzFramework:fuzz_test_framework_base" ]
+    }
+    deps += [ "//testing/FuzzFramework:fuzz_test_framework"]
+    configs += [ "//testing/FuzzFramework:fuzz_config" ]
+    if (defined(invoker.configs)) {
+      configs += invoker.configs
+    }
+
+    if (defined(configs_to_exclude)) {
+      configs -= configs_to_exclude
+    }
+  }
+}
