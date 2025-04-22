@@ -73,6 +73,10 @@ if (current_cpu == "") {
 if (current_os == "") {
   if (host_os == "win") {
     current_os = "win"
+    # support android build on windows
+    if (target_os == "android") {
+      current_os = target_os
+    }
   } else {
     current_os = target_os
   }
