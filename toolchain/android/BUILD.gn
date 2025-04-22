@@ -60,6 +60,8 @@ template("android_gcc_toolchain") {
         host_dir = "linux-x86_64"
       } else if (host_os == "mac") {
         host_dir = "darwin-x86_64"
+      } else if (host_os == "win") {
+        host_dir ="windows-x86_64"
       } else {
         assert(false, "Unknown host")
       }
