@@ -89,6 +89,7 @@ template("darwin_general_bundle") {
 
       deps = [ "//build/config/ios:compiler_plist" ]
     } else if (is_mac) {
+      format = "xml1"
       plists += [
         get_label_info("//build/config/mac:compiler_plist", "target_out_dir") +
             "/compiler_plist/Info.plist",
