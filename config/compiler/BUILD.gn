@@ -136,6 +136,18 @@ config("compiler") {
     if (is_asan) {
       cflags += [ "-fsanitize=address" ]
       ldflags += [ "-fsanitize=address" ]
+
+      if (is_harmony) {
+        cflags += [
+          "-shared-libasan",
+          "-fno-omit-frame-pointer",
+          "-fsanitize-recover=address",
+        ]
+
+        ldflags += [
+          "-shared-libasan",
+        ]
+      }
     }
     if (is_lsan) {
       cflags += [ "-fsanitize=leak" ]
@@ -403,7 +415,7 @@ config("compiler") {
 
   # Linux/Android common flags setup.
   # ---------------------------------
-  if (is_linux || is_android) {
+  if (is_linux || is_android || is_harmony) {
     cflags += [
       "-fPIC",
       "-pipe",  # Use pipes for communicating between sub-processes. Faster.
@@ -832,6 +844,11 @@ if (is_win) {
         "-Wno-range-loop-construct",
       ]
     }
+    if (is_harmony) {
+      default_warning_flags -= [
+        "-Wno-enum-constexpr-conversion",
+      ]
+    }
   }
 
   if (is_apple) {
@@ -1057,6 +1074,20 @@ config("optimize") {
     if (enable_lto) {
       lto_flags += [ "-flto" ]
       lto_ldflags += [ "-O2" ]
+    }
+  } else if (is_harmony) {
+    if (enable_optimize_with_O2) {
+      cflags = [ "-O2" ]
+    } else {
+      cflags = [ "-Oz" ]
+    }
+    cflags += common_optimize_on_cflags  # Favor size over speed.
+    if (enable_lto) {
+      lto_flags += [ "-flto" ]
+      # ld.lld: error: -plugin-opt=Oz: number expected, but got 'z'
+      # Somehow lld doesn't support Oz with lto, so we set O2 here.
+      # Refer to https://releases.llvm.org/7.0.0/tools/lld/docs/ReleaseNotes.html
+      lto_ldflags += ["-O2"]
     }
   } else {
     cflags = [ "-O2" ] + common_optimize_on_cflags

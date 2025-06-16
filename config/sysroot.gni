@@ -31,6 +31,9 @@ if (current_toolchain == default_toolchain && target_sysroot != "") {
     sysroot = rebase_path(
             "$android_ndk_root/toolchains/llvm/prebuilt/${android_host_os}-${android_host_arch}/sysroot")
   }
+} else if (is_harmony) {
+  import("//build/config/harmony/config.gni")
+  sysroot = rebase_path("$harmony_ndk_root/sysroot")
 } else if (is_linux && !is_chromeos) {
   if (current_cpu == "mipsel") {
     sysroot = rebase_path("//mipsel-sysroot/sysroot")

@@ -47,6 +47,14 @@
 #endif  // defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
 
 
+#elif defined(__OHOS_FAMILY__)
+#define OS_HARMONY 1
+// include a system header to pull in features.h for glibc/uclibc macros.
+#include <unistd.h>
+#if defined(__GLIBC__) && !defined(__UCLIBC__)
+// we really are using glibc, not uClibc pretending to be glibc
+#define LIBC_GLIBC 1
+#endif
 
 #elif defined(__linux__)
 #define OS_LINUX 1
@@ -85,7 +93,7 @@
 // more specific macro.
 #if defined(OS_MACOSX) || defined(OS_LINUX) || defined(OS_FREEBSD) ||    \
     defined(OS_OPENBSD) || defined(OS_SOLARIS) || defined(OS_ANDROID) || \
-    defined(OS_NACL) || defined(OS_QNX)
+    defined(OS_NACL) || defined(OS_QNX) || defined(OS_HARMONY)
 #define OS_POSIX 1
 #endif
 
