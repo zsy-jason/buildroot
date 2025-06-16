@@ -1,0 +1,106 @@
+# Copyright 2025 The Lynx Authors. All rights reserved.
+# Licensed under the Apache License Version 2.0 that can be found in the
+# LICENSE file in the root directory of this source tree.
+# Copyright 2014 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# This file contains common system config stuff for the OpenHarmony build.
+
+if (is_harmony) {
+  if (!defined(default_harmony_sdk_root)) {
+    default_harmony_sdk_root =
+        exec_script("//build/config/harmony/get_sdk_ndk_path.py",
+                    [
+                      "--env-var",
+                      "HARMONY_HOME",
+                      "-bp",
+                      rebase_path("//"),
+                      "-p",
+                      "//tools/harmony_tools/sdk",
+                    ],
+                    "string")
+    default_harmony_sdk_version = "HarmonyOS-NEXT-DB1"
+  }
+
+  declare_args() {
+    harmony_sdk_root = default_harmony_sdk_root
+    harmony_sdk_version = default_harmony_sdk_version
+  }
+
+  # Host stuff -----------------------------------------------------------------
+
+  # Defines the name the OpenHarmony build gives to the current host CPU
+  # architecture, which is different than the names GN uses.
+  if (host_cpu == "x64" || host_cpu == "x86" || host_cpu == "arm64") {
+    harmony_host_arch = "x86_64"
+  } else {
+    assert(false, "Need OpenHarmony toolchain support for your build CPU arch.")
+  }
+
+  # Defines the name the OpenHarmony build gives to the current host CPU
+  # architecture, which is different than the names GN uses.
+  if (host_os == "linux") {
+    harmony_host_os = "linux"
+  } else if (host_os == "mac") {
+    harmony_host_os = "darwin"
+  } else if (host_os == "win") {
+    harmony_host_os = "win"
+  } else {
+    assert(false, "Need OpenHarmony toolchain support for your build OS.")
+  }
+
+  # Directories and files ------------------------------------------------------
+  #
+  # We define may of the dirs strings here for each output architecture (rather
+  # than just the current one) since these are needed by the OpenHarmony toolchain
+  # file to define toolchains for all possible targets in one pass.
+
+  harmony_sdk = "${harmony_sdk_root}/${harmony_sdk_version}"
+
+  # Path to the OpenHarmony NDK and SDK.
+  harmony_ndk_root = "${harmony_sdk}/openharmony/native"
+
+  harmony_toolchain_root = "$harmony_ndk_root/llvm"
+
+  # Location of libgcc. This is only needed for the current GN toolchain, so we
+  # only need to define the current one, rather than one for every platform
+  # like the toolchain roots.
+  if (current_cpu == "arm") {
+    harmony_target_triple = "arm-linux-ohos"
+  } else if (current_cpu == "x64") {
+    harmony_target_triple = "x86_64-linux-ohos"
+  } else if (current_cpu == "arm64") {
+    harmony_target_triple = "aarch64-linux-ohos"
+  } else {
+    assert(false, "Need harmony libgcc support for your target arch.")
+  }
+
+  harmony_lib = "$harmony_ndk_root/sysroot/usr/lib/$harmony_target_triple"
+  harmony_tool_prefix = "$harmony_toolchain_root/bin"
+  harmony_readelf = "${harmony_tool_prefix}/llvm-readelf"
+  harmony_objcopy = "${harmony_tool_prefix}/llvm-objcopy"
+
+  # Toolchain stuff ------------------------------------------------------------
+
+  harmony_libcpp_root = "$harmony_ndk_root/llvm/lib/$harmony_target_triple/c++"
+
+  harmony_product_extension = ".so"
+
+  # ABI ------------------------------------------------------------------------
+
+  if (current_cpu == "arm") {
+    import("//build/config/arm.gni")
+    if (arm_version < 7) {
+      harmony_app_abi = "armeabi"
+    } else {
+      harmony_app_abi = "armeabi-v7a"
+    }
+  } else if (current_cpu == "x64") {
+    harmony_app_abi = "x86_64"
+  } else if (current_cpu == "arm64") {
+    harmony_app_abi = "arm64-v8a"
+  } else {
+    assert(false, "Unknown OpenHarmony ABI: " + current_cpu)
+  }
+}
