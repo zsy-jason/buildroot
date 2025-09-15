@@ -4,6 +4,9 @@
 
 # define is_wasm
 import("//build/toolchain/wasm.gni")
+# import podspec and cmake template
+import("//build/util/podspec_target_template.gni")
+import("//build/util/cmake_target_template.gni")
 
 # =============================================================================
 # PLATFORM SELECTION
