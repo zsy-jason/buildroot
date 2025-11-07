@@ -75,6 +75,10 @@
 #define OS_SOLARIS 1
 #elif defined(__QNXNTO__)
 #define OS_QNX 1
+#elif defined(__QNXNTO__)
+#define OS_QNX 1
+#elif defined(__wasm__)
+#define OS_WASM 1
 #else
 #error Please add support for your platform in build/build_config.h
 #endif
@@ -151,6 +155,16 @@
 #define ARCH_CPU_32_BITS 1
 #define ARCH_CPU_LITTLE_ENDIAN 1
 #endif
+#elif defined(__wasm32__)
+#define ARCH_CPU_WASM_FAMILY 1
+#define ARCH_CPU_WASM32 1
+#define ARCH_CPU_32_BITS 1
+#define ARCH_CPU_LITTLE_ENDIAN 1
+#elif defined(__wasm64__)
+#define ARCH_CPU_WASM_FAMILY 1
+#define ARCH_CPU_WASM64 1
+#define ARCH_CPU_64_BITS 1
+#define ARCH_CPU_LITTLE_ENDIAN 1
 #else
 #error Please add support for your architecture in build/build_config.h
 #endif
@@ -167,6 +181,8 @@
 // compile in this mode (in particular, Chrome doesn't). This is intended for
 // other projects using base who manage their own dependencies and make sure
 // short wchar works for them.
+#define WCHAR_T_IS_UTF16
+#elif defined(__wasm__)
 #define WCHAR_T_IS_UTF16
 #else
 #error Please add support for your compiler in build/build_config.h
