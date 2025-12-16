@@ -8,7 +8,6 @@ import filecmp
 import fnmatch
 import json
 import os
-import pipes
 import re
 import shlex
 import shutil
