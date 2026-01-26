@@ -14,6 +14,11 @@ config("libcxx_config") {
         "ENABLE_LIBCPP_ABI_NAMESPACE_CR",
         "LIBCPP_ABI_NAMESPACE_CR=${libcpp_abi_namespace_cr}",
       ]
+      if (libcpp_abi_namespace_cr == "__Cr") {
+        defines += [
+          "ENABLE_LIBCPP_DECLSPEC_EMPTY_BASES"
+        ]
+      }
     }
     if (is_win) {
       include_dirs += [
